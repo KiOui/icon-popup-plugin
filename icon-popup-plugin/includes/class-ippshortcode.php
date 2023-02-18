@@ -44,13 +44,6 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 		private ?string $icon;
 
 		/**
-		 * Popup title.
-		 *
-		 * @var ?string
-		 */
-		private ?string $popup_title;
-
-		/**
 		 * Popup text.
 		 *
 		 * @var ?string
@@ -70,6 +63,13 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 		 * @var ?string
 		 */
 		private ?string $text_color;
+
+		/**
+		 * Location of the popup.
+		 *
+		 * @var string
+		 */
+		private string $location;
 
 		/**
 		 * Construct a shortcode.
@@ -95,11 +95,6 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 			} else {
 				$this->icon = null;
 			}
-			if ( key_exists( 'popup_title', $atts ) && 'string' === gettype( $atts['popup_title'] ) ) {
-				$this->popup_title = $atts['popup_title'];
-			} else {
-				$this->popup_title = null;
-			}
 			if ( key_exists( 'popup_text', $atts ) && 'string' === gettype( $atts['popup_text'] ) ) {
 				$this->popup_text = $atts['popup_text'];
 			} else {
@@ -115,6 +110,11 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 			} else {
 				$this->text_color = null;
 			}
+			if ( key_exists( 'location', $atts ) && gettype( $atts['location'] ) == 'string' && in_array( $atts['location'], array( 'top', 'left', 'bottom', 'right' ) ) ) {
+				$this->location = $atts['location'];
+			} else {
+				$this->location = 'top';
+			}
 			$this->include_styles_and_scripts();
 		}
 
@@ -122,10 +122,10 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 		 * Include all styles and scripts required for this slider to work.
 		 */
 		public function include_styles_and_scripts(): void {
-			wp_enqueue_style( 'ipp-shortcode', IPP_PLUGIN_URI . 'assets/badges/css/ipp-badges.css', array(), '1.0' );
 			if ( isset( $this->popup_text ) ) {
 				wp_enqueue_style( 'bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css', array(), '5.2.3' );
 				wp_enqueue_script( 'bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js', array(), '5.2.3' );
+				wp_enqueue_script( 'ipp-shortcode', IPP_PLUGIN_URI . 'assets/js/ipp-activate-tooltips.js', array( 'bootstrap' ), '1.0', true );
 			}
 		}
 
@@ -145,7 +145,7 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 		 */
 		public function do_shortcode() {
 			ob_start(); ?>
-			<div class="ipp-badge 
+			<div class="ipp-badge
 			<?php
 			if ( isset( $this->class ) ) {
 				echo esc_attr( $this->class ); }
@@ -160,7 +160,7 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 			<?php endif; ?>
 					"
 				<?php if ( isset( $this->popup_text ) ) : ?>
-					data-bs-toggle="modal" data-bs-target="#ipp-badge-modal-<?php echo esc_attr( $this->id ); ?>"
+					data-bs-toggle="tooltip" data-bs-placement="<?php echo esc_attr( $this->location ); ?>" title="<?php echo esc_attr( $this->popup_text ); ?>"
 				<?php endif; ?>
 			>
 				<?php if ( isset( $this->icon ) ) : ?>
@@ -180,25 +180,6 @@ if ( ! class_exists( 'IPPShortcode' ) ) {
 						><?php echo esc_html( $this->badge_text ); ?></span>
 				<?php endif; ?>
 			</div>
-			<?php if ( isset( $this->popup_text ) ) : ?>
-				<div class="modal fade" id="ipp-badge-modal-<?php echo esc_attr( $this->id ); ?>" tabindex="-1"
-					 aria-hidden="true">
-					<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-						<div class="modal-content">
-							<div class="modal-header">
-								<?php if ( isset( $this->popup_title ) ) : ?>
-									<h5 class="modal-title"><?php echo esc_html( $this->popup_title ); ?></h5>
-								<?php endif; ?>
-								<button type="button" class="btn-close" data-bs-dismiss="modal"
-										aria-label="Close"></button>
-							</div>
-							<div class="modal-body">
-								<?php echo esc_html( $this->popup_text ); ?>
-							</div>
-						</div>
-					</div>
-				</div>
-			<?php endif; ?>
 			<?php
 			$ob_content = ob_get_contents();
 			ob_end_clean();
